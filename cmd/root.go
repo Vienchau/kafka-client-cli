@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -35,13 +34,4 @@ func init() {
 	rootCmd.AddCommand(produceCmd)
 	rootCmd.AddCommand(consumeCmd)
 	rootCmd.AddCommand(versionCmd)
-}
-
-func validateBootstrapServers(servers string) ([]string, error) {
-	servers = strings.TrimSpace(servers)
-	if len(servers) == 0 {
-		return nil, ErrBootstrapServersEmpty
-	}
-
-	return strings.Split(servers, ","), nil
 }

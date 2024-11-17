@@ -25,50 +25,42 @@ func init() {
 		"topic",
 		"t",
 		"",
-		"Kafka topic to consume messages from",
+		"[REQUIRED] Kafka topic to consume messages from",
 	)
 
 	consumeCmd.PersistentFlags().StringP(
 		"bootstrap-servers",
 		"b",
 		"",
-		"Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092,localhost:9093')")
+		"[REQUIRED] Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092,localhost:9093')")
 
-	consumeCmd.PersistentFlags().StringP(
-		"authen-options",
-		"a",
+	consumeCmd.PersistentFlags().String(
+		"username",
 		"",
-		"Authentication options (e.g., 'username:password')")
+		"Username for authentication")
+
+	consumeCmd.PersistentFlags().String(
+		"password",
+		"",
+		"Password for authentication")
+
+	consumeCmd.MarkPersistentFlagRequired("bootstrap-servers")
+	consumeCmd.MarkPersistentFlagRequired("topic")
+	consumeCmd.MarkFlagsRequiredTogether("username", "password")
 }
 
 func consumeCmdHandler(cmd *cobra.Command, args []string) {
 	// flag parsing
 	topic, _ := cmd.Flags().GetString("topic")
 	bootstrapServerStr, _ := cmd.Flags().GetString("bootstrap-servers")
-	authenOpts, _ := cmd.Flags().GetString("authen-options")
+	username, _ := cmd.Flags().GetString("username")
+	password, _ := cmd.Flags().GetString("password")
 
 	// Validate input
-	bootstrapServers, err := validateBootstrapServers(bootstrapServerStr)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
-	if topic == "" {
-		fmt.Println(ErrTopicEmpty.Error())
-		return
-	}
+	bootstrapServers := strings.Split(bootstrapServerStr, ",")
 
 	var opts []kafka.StoreOption
-	if len(authenOpts) != 0 {
-		strs := strings.Split(authenOpts, ":")
-		if len(strs) != 2 {
-			fmt.Println(ErrInvalidAuthenOpts)
-			return
-		}
-
-		username := strs[0]
-		password := strs[1]
+	if username != "" && password != "" {
 		opts = append(opts, kafka.WithAuthenticate(username, password))
 	}
 
@@ -86,10 +78,10 @@ func consumeCmdHandler(cmd *cobra.Command, args []string) {
 		cancel()
 	}()
 
-	// Consume message withj new usecase
+	// Consume message with new usecase
 	svc := usecases.NewConsumeUsercase(store)
 
-	err = svc.Execute(ctx, topic)
+	err := svc.Execute(ctx, topic)
 	if err != nil {
 		fmt.Printf(ErrTopicEmpty.Error(), err)
 		return

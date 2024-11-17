@@ -2,7 +2,7 @@ package usecases
 
 import "context"
 
-type Consume struct {
+type consume struct {
 	consumeRepo ConsumeRepository
 }
 
@@ -10,11 +10,11 @@ type ConsumeRepository interface {
 	ConsumeMessage(ctx context.Context, topic string) error
 }
 
-func NewConsumeUsercase(consumeRepo ConsumeRepository) *Consume {
-	return &Consume{consumeRepo}
+func NewConsumeUsercase(consumeRepo ConsumeRepository) *consume {
+	return &consume{consumeRepo}
 }
 
-func (c *Consume) Execute(ctx context.Context, topic string) error {
+func (c *consume) Execute(ctx context.Context, topic string) error {
 	err := c.consumeRepo.ConsumeMessage(ctx, topic)
 	if err != nil {
 		return err

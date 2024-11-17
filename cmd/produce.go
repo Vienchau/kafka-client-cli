@@ -1,7 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"kcli/internal/infras/kafka"
+	"kcli/internal/usecases"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -18,20 +23,24 @@ func init() {
 		"topic",
 		"t",
 		"",
-		"Kafka topic to consume messages from",
+		"[REQUIRED] Kafka topic to consume messages from",
 	)
 
 	produceCmd.PersistentFlags().StringP(
 		"bootstrap-servers",
 		"b",
 		"",
-		"Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092,localhost:9093')")
+		"[REQUIRED] Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092,localhost:9093')")
 
-	produceCmd.PersistentFlags().StringP(
-		"authen-options",
-		"a",
+	produceCmd.PersistentFlags().String(
+		"username",
 		"",
-		"Authentication options (e.g., 'username:password')")
+		"Username for authentication")
+
+	produceCmd.PersistentFlags().String(
+		"password",
+		"",
+		"Password for authentication")
 
 	produceCmd.PersistentFlags().StringP(
 		"key",
@@ -46,30 +55,45 @@ func init() {
 		"Message payload")
 
 	produceCmd.PersistentFlags().StringP(
-		"with-file",
+		"file",
 		"f",
 		"",
 		"Read message payload from file")
+
+	produceCmd.MarkPersistentFlagRequired("bootstrap-servers")
+	produceCmd.MarkPersistentFlagRequired("topic")
+	produceCmd.MarkFlagsRequiredTogether("username", "password")
+	produceCmd.MarkFlagsMutuallyExclusive("file", "payload")
 }
 
 func produceCmdHandler(cmd *cobra.Command, args []string) {
 	// flag parsing
 	topic, _ := cmd.Flags().GetString("topic")
 	bootstrapServerStr, _ := cmd.Flags().GetString("bootstrap-servers")
-	authenOpts, _ := cmd.Flags().GetString("authen-options")
+	username, _ := cmd.Flags().GetString("username")
+	password, _ := cmd.Flags().GetString("password")
+	key, _ := cmd.Flags().GetString("key")
+	payload, _ := cmd.Flags().GetString("payload")
+	withFile, _ := cmd.Flags().GetString("with-file")
 
-	bootstrapServers, err := validateBootstrapServers(bootstrapServerStr)
+	// Validate input
+	bootstrapServers := strings.Split(bootstrapServerStr, ",")
+
+	var opts []kafka.StoreOption
+	if username != "" && password != "" {
+		opts = append(opts, kafka.WithAuthenticate(username, password))
+	}
+
+	store := kafka.NewKafkaStore(bootstrapServers, opts...)
+
+	// Context for graceful shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc := usecases.NewProduceUsecase(store)
+	err := svc.Execute(ctx, topic, key, []byte(payload), withFile)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println("Error while producing message: ", err)
 		return
 	}
-
-	if topic == "" {
-		fmt.Println(ErrTopicEmpty)
-		return
-	}
-
-	fmt.Println("Produce message to topic: ", topic)
-	fmt.Println("Bootstrap servers: ", bootstrapServers)
-	fmt.Println("Authen options: ", authenOpts)
 }
