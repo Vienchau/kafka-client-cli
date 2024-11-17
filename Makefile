@@ -28,7 +28,7 @@ audit:
 # ==================================================================================== #
 current_time = $(shell date --iso-8601=seconds)
 git_description = $(shell git describe --always --dirty --tags --long)
-linker_flags = "-s -X 'kcli/cmd.buildTime=${buildTime}' -X 'kcli/cmd.version=${git_description}'"
+linker_flags = "-s -X 'kcli/cmd.buildTime=${current_time}' -X 'kcli/cmd.version=${git_description}'"
 
 ## build: build the cmd application
 .PHONY: build
