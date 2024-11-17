@@ -35,10 +35,11 @@ vendor:
 # ==================================================================================== #
 current_time = $(shell date --iso-8601=seconds)
 git_description = $(shell git describe --always --dirty --tags --long)
-linker_flags = '-s -X main.buildTime=${current_time} -X main.version=${git_description}'
+linker_flags = "-s -X 'kcli/cmd.buildTime=${buildTime}' -X 'kcli/cmd.version=${git_description}'"
 
 ## build: build the cmd application
 .PHONY: build
 build:
 	@echo 'Building cmd...'
 	go build -ldflags=${linker_flags} -o=./bin/kcli .
+	GOOS=linux GOARCH=amd64 go build -ldflags=${linker_flags} -o=./bin/linux_amd64/kcli .

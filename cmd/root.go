@@ -9,6 +9,11 @@ import (
 )
 
 var (
+	buildTime string
+	version   string
+)
+
+var (
 	ErrBootstrapServersEmpty = fmt.Errorf("bootstrap servers must not be empty")
 	ErrTopicEmpty            = fmt.Errorf("topic must not be empty")
 	ErrInvalidAuthenOpts     = fmt.Errorf("invalid authen options")
@@ -29,6 +34,7 @@ func Execute() {
 func init() {
 	rootCmd.AddCommand(produceCmd)
 	rootCmd.AddCommand(consumeCmd)
+	rootCmd.AddCommand(versionCmd)
 }
 
 func validateBootstrapServers(servers string) ([]string, error) {

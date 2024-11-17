@@ -34,12 +34,6 @@ func init() {
 		"Authentication options (e.g., 'username:password')")
 
 	produceCmd.PersistentFlags().StringP(
-		"format",
-		"f",
-		"json",
-		"Message format (e.g., 'json', 'string')")
-
-	produceCmd.PersistentFlags().StringP(
 		"key",
 		"k",
 		"",
@@ -52,8 +46,8 @@ func init() {
 		"Message payload")
 
 	produceCmd.PersistentFlags().StringP(
-		"from-file",
-		"ff",
+		"with-file",
+		"f",
 		"",
 		"Read message payload from file")
 }
