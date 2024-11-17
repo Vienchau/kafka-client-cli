@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"kcli/internal/infras/kafka"
 	"kcli/internal/usecases"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 )
 
 type produceOptions struct {
-	BootstrapServers string
+	BootstrapServers []string
 	Topic            string
 	Username         string
 	Password         string
@@ -34,11 +33,12 @@ var (
 )
 
 func init() {
-	produceCmd.PersistentFlags().StringVar(
+	produceCmd.PersistentFlags().StringArrayVarP(
 		&produceOpts.BootstrapServers,
 		"bootstrap-servers",
-		"",
-		"[REQUIRED] Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092,localhost:9093')")
+		"b",
+		[]string{},
+		"[REQUIRED] Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092 localhost:9093')")
 
 	produceCmd.PersistentFlags().StringVar(
 		&produceOpts.Topic,
@@ -93,7 +93,7 @@ func init() {
 
 func produceCmdHandler(cmd *cobra.Command, args []string) {
 	// Validate input
-	bootstrapServers := strings.Split(produceOpts.BootstrapServers, ",")
+	bootstrapServers := produceOpts.BootstrapServers
 
 	var opts []kafka.StoreOption
 	if produceOpts.Username != "" && produceOpts.Password != "" {

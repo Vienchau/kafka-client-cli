@@ -7,14 +7,13 @@ import (
 	"kcli/internal/usecases"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
 )
 
 type consumeOptions struct {
-	BootstrapServers string
+	BootstrapServers []string
 	Topic            string
 	Username         string
 	Password         string
@@ -32,11 +31,12 @@ var (
 )
 
 func init() {
-	consumeCmd.PersistentFlags().StringVar(
+	consumeCmd.PersistentFlags().StringArrayVarP(
 		&consumeOpts.BootstrapServers,
 		"bootstrap-servers",
-		"",
-		"[REQUIRED] Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092,localhost:9093')")
+		"b",
+		[]string{},
+		"[REQUIRED] Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092 localhost:9093')")
 
 	consumeCmd.PersistentFlags().StringVar(
 		&consumeOpts.Topic,
@@ -63,7 +63,7 @@ func init() {
 
 func consumeCmdHandler(cmd *cobra.Command, args []string) {
 	// Validate input
-	bootstrapServers := strings.Split(consumeOpts.BootstrapServers, ",")
+	bootstrapServers := consumeOpts.BootstrapServers
 
 	var opts []kafka.StoreOption
 	if consumeOpts.Username != "" && consumeOpts.Password != "" {
