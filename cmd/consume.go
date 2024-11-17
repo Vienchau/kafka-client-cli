@@ -13,33 +13,45 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var consumeCmd = &cobra.Command{
-	Use:     "consume",
-	Aliases: []string{"c"},
-	Short:   "Consume messages to a Kafka topic",
-	Run:     consumeCmdHandler,
+type consumeOptions struct {
+	BootstrapServers string
+	Topic            string
+	Username         string
+	Password         string
 }
 
-func init() {
-	consumeCmd.PersistentFlags().StringP(
-		"topic",
-		"t",
-		"",
-		"[REQUIRED] Kafka topic to consume messages from",
-	)
+var (
+	consumeCmd = &cobra.Command{
+		Use:     "consume",
+		Aliases: []string{"c"},
+		Short:   "Consume messages from a Kafka topic",
+		Run:     consumeCmdHandler,
+	}
 
-	consumeCmd.PersistentFlags().StringP(
+	consumeOpts consumeOptions
+)
+
+func init() {
+	consumeCmd.PersistentFlags().StringVar(
+		&consumeOpts.BootstrapServers,
 		"bootstrap-servers",
-		"b",
 		"",
 		"[REQUIRED] Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092,localhost:9093')")
 
-	consumeCmd.PersistentFlags().String(
+	consumeCmd.PersistentFlags().StringVar(
+		&consumeOpts.Topic,
+		"topic",
+		"",
+		"[REQUIRED] Kafka topic to consume messages from")
+
+	consumeCmd.PersistentFlags().StringVar(
+		&consumeOpts.Username,
 		"username",
 		"",
 		"Username for authentication")
 
-	consumeCmd.PersistentFlags().String(
+	consumeCmd.PersistentFlags().StringVar(
+		&consumeOpts.Password,
 		"password",
 		"",
 		"Password for authentication")
@@ -50,18 +62,12 @@ func init() {
 }
 
 func consumeCmdHandler(cmd *cobra.Command, args []string) {
-	// flag parsing
-	topic, _ := cmd.Flags().GetString("topic")
-	bootstrapServerStr, _ := cmd.Flags().GetString("bootstrap-servers")
-	username, _ := cmd.Flags().GetString("username")
-	password, _ := cmd.Flags().GetString("password")
-
 	// Validate input
-	bootstrapServers := strings.Split(bootstrapServerStr, ",")
+	bootstrapServers := strings.Split(consumeOpts.BootstrapServers, ",")
 
 	var opts []kafka.StoreOption
-	if username != "" && password != "" {
-		opts = append(opts, kafka.WithAuthenticate(username, password))
+	if consumeOpts.Username != "" && consumeOpts.Password != "" {
+		opts = append(opts, kafka.WithAuthenticate(consumeOpts.Username, consumeOpts.Password))
 	}
 
 	store := kafka.NewKafkaStore(bootstrapServers, opts...)
@@ -78,14 +84,11 @@ func consumeCmdHandler(cmd *cobra.Command, args []string) {
 		cancel()
 	}()
 
-	// Consume message with new usecase
+	// Consume messages
 	svc := usecases.NewConsumeUsercase(store)
-
-	err := svc.Execute(ctx, topic)
+	err := svc.Execute(ctx, consumeOpts.Topic)
 	if err != nil {
-		fmt.Printf(ErrTopicEmpty.Error(), err)
+		fmt.Println("Error while consuming messages: ", err)
 		return
 	}
-
-	fmt.Println("Consume message done!")
 }

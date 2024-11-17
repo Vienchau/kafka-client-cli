@@ -11,54 +11,79 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var produceCmd = &cobra.Command{
-	Use:     "produce",
-	Aliases: []string{"p"},
-	Short:   "Produce messages to a Kafka topic",
-	Run:     produceCmdHandler,
+type produceOptions struct {
+	BootstrapServers string
+	Topic            string
+	Username         string
+	Password         string
+	Key              string
+	Payload          string
+	File             string
+	Timeout          int
 }
 
-func init() {
-	produceCmd.PersistentFlags().StringP(
-		"topic",
-		"t",
-		"",
-		"[REQUIRED] Kafka topic to consume messages from",
-	)
+var (
+	produceCmd = &cobra.Command{
+		Use:     "produce",
+		Aliases: []string{"p"},
+		Short:   "Produce messages to a Kafka topic",
+		Run:     produceCmdHandler,
+	}
 
-	produceCmd.PersistentFlags().StringP(
+	produceOpts produceOptions
+)
+
+func init() {
+	produceCmd.PersistentFlags().StringVar(
+		&produceOpts.BootstrapServers,
 		"bootstrap-servers",
-		"b",
 		"",
 		"[REQUIRED] Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092,localhost:9093')")
 
-	produceCmd.PersistentFlags().String(
+	produceCmd.PersistentFlags().StringVar(
+		&produceOpts.Topic,
+		"topic",
+		"",
+		"[REQUIRED] Kafka topic to produce messages to")
+
+	produceCmd.PersistentFlags().StringVar(
+		&produceOpts.Username,
 		"username",
 		"",
 		"Username for authentication")
 
-	produceCmd.PersistentFlags().String(
+	produceCmd.PersistentFlags().StringVar(
+		&produceOpts.Password,
 		"password",
 		"",
 		"Password for authentication")
 
-	produceCmd.PersistentFlags().StringP(
+	produceCmd.PersistentFlags().StringVarP(
+		&produceOpts.Key,
 		"key",
 		"k",
 		"",
 		"Message key, if this option empty, the key will be generated automatically")
 
-	produceCmd.PersistentFlags().StringP(
+	produceCmd.PersistentFlags().StringVarP(
+		&produceOpts.Payload,
 		"payload",
 		"p",
 		"",
 		"Message payload")
 
-	produceCmd.PersistentFlags().StringP(
+	produceCmd.PersistentFlags().StringVarP(
+		&produceOpts.File,
 		"file",
 		"f",
 		"",
 		"Read message payload from file")
+
+	produceCmd.PersistentFlags().IntVar(
+		&produceOpts.Timeout,
+		"with-timeout",
+		5,
+		"Timeout for producing message in second, default 5s")
 
 	produceCmd.MarkPersistentFlagRequired("bootstrap-servers")
 	produceCmd.MarkPersistentFlagRequired("topic")
@@ -67,31 +92,29 @@ func init() {
 }
 
 func produceCmdHandler(cmd *cobra.Command, args []string) {
-	// flag parsing
-	topic, _ := cmd.Flags().GetString("topic")
-	bootstrapServerStr, _ := cmd.Flags().GetString("bootstrap-servers")
-	username, _ := cmd.Flags().GetString("username")
-	password, _ := cmd.Flags().GetString("password")
-	key, _ := cmd.Flags().GetString("key")
-	payload, _ := cmd.Flags().GetString("payload")
-	withFile, _ := cmd.Flags().GetString("with-file")
-
 	// Validate input
-	bootstrapServers := strings.Split(bootstrapServerStr, ",")
+	bootstrapServers := strings.Split(produceOpts.BootstrapServers, ",")
 
 	var opts []kafka.StoreOption
-	if username != "" && password != "" {
-		opts = append(opts, kafka.WithAuthenticate(username, password))
+	if produceOpts.Username != "" && produceOpts.Password != "" {
+		opts = append(opts, kafka.WithAuthenticate(produceOpts.Username, produceOpts.Password))
 	}
 
 	store := kafka.NewKafkaStore(bootstrapServers, opts...)
 
 	// Context for graceful shutdown
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(produceOpts.Timeout)*time.Second)
 	defer cancel()
 
+	// Produce message
 	svc := usecases.NewProduceUsecase(store)
-	err := svc.Execute(ctx, topic, key, []byte(payload), withFile)
+	err := svc.Execute(
+		ctx,
+		produceOpts.Topic,
+		produceOpts.Key,
+		[]byte(produceOpts.Payload),
+		produceOpts.File)
+
 	if err != nil {
 		fmt.Println("Error while producing message: ", err)
 		return
