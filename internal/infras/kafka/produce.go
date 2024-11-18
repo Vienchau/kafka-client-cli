@@ -7,15 +7,12 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-func (s *store) ProduceMessage(ctx context.Context, topic, key string, payload []byte) error {
-	fmt.Println("message json: ", string(payload))
-
+func (s *store) ProduceMessage(ctx context.Context, key string, payload []byte) error {
 	writer := s.writerDial()
 
 	err := writer.WriteMessages(
 		ctx,
 		kafka.Message{
-			Topic: topic,
 			Key:   []byte(key),
 			Value: payload,
 		},
@@ -25,5 +22,6 @@ func (s *store) ProduceMessage(ctx context.Context, topic, key string, payload [
 		return err
 	}
 
-	return nil
+	fmt.Println("Message produced successfully!")
+	return writer.Close()
 }

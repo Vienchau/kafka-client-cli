@@ -33,12 +33,12 @@ var (
 )
 
 func init() {
-	produceCmd.PersistentFlags().StringArrayVarP(
+	produceCmd.PersistentFlags().StringSliceVarP(
 		&produceOpts.BootstrapServers,
 		"bootstrap-servers",
 		"b",
 		[]string{},
-		"[REQUIRED] Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092 localhost:9093')")
+		"[REQUIRED] Kafka bootstrap servers, split by ',' (e.g., 'localhost:9092,localhost:9093' - comma separated)")
 
 	produceCmd.PersistentFlags().StringVar(
 		&produceOpts.Topic,
@@ -89,6 +89,7 @@ func init() {
 	produceCmd.MarkPersistentFlagRequired("topic")
 	produceCmd.MarkFlagsRequiredTogether("username", "password")
 	produceCmd.MarkFlagsMutuallyExclusive("file", "payload")
+	produceCmd.MarkFlagsOneRequired("file", "payload")
 }
 
 func produceCmdHandler(cmd *cobra.Command, args []string) {
@@ -100,7 +101,10 @@ func produceCmdHandler(cmd *cobra.Command, args []string) {
 		opts = append(opts, kafka.WithAuthenticate(produceOpts.Username, produceOpts.Password))
 	}
 
-	store := kafka.NewKafkaStore(bootstrapServers, opts...)
+	store := kafka.NewKafkaStore(
+		bootstrapServers,
+		produceOpts.Topic,
+		opts...)
 
 	// Context for graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(produceOpts.Timeout)*time.Second)
@@ -110,7 +114,6 @@ func produceCmdHandler(cmd *cobra.Command, args []string) {
 	svc := usecases.NewProduceUsecase(store)
 	err := svc.Execute(
 		ctx,
-		produceOpts.Topic,
 		produceOpts.Key,
 		[]byte(produceOpts.Payload),
 		produceOpts.File)

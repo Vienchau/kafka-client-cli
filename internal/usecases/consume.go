@@ -7,15 +7,15 @@ type consume struct {
 }
 
 type ConsumeRepository interface {
-	ConsumeMessage(ctx context.Context, topic string) error
+	ConsumeMessage(ctx context.Context) error
 }
 
 func NewConsumeUsercase(consumeRepo ConsumeRepository) *consume {
 	return &consume{consumeRepo}
 }
 
-func (c *consume) Execute(ctx context.Context, topic string) error {
-	err := c.consumeRepo.ConsumeMessage(ctx, topic)
+func (c *consume) Execute(ctx context.Context) error {
+	err := c.consumeRepo.ConsumeMessage(ctx)
 	if err != nil {
 		return err
 	}

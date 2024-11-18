@@ -13,14 +13,14 @@ type produce struct {
 }
 
 type ProduceRepository interface {
-	ProduceMessage(ctx context.Context, topic, key string, payload []byte) error
+	ProduceMessage(ctx context.Context, key string, payload []byte) error
 }
 
 func NewProduceUsecase(produceRepo ProduceRepository) *produce {
 	return &produce{produceRepo}
 }
 
-func (p *produce) Execute(ctx context.Context, topic string, key string, payload []byte, withFile string) error {
+func (p *produce) Execute(ctx context.Context, key string, payload []byte, withFile string) error {
 	if withFile != "" {
 		data, err := os.ReadFile(withFile)
 		if err != nil {
@@ -43,7 +43,7 @@ func (p *produce) Execute(ctx context.Context, topic string, key string, payload
 		key = common.GenerateUUID()
 	}
 
-	err := p.produceRepo.ProduceMessage(ctx, topic, key, payload)
+	err := p.produceRepo.ProduceMessage(ctx, key, payload)
 	if err != nil {
 		return err
 	}

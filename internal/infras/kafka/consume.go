@@ -3,31 +3,18 @@ package kafka
 import (
 	"context"
 	"fmt"
-	"log"
 )
 
-func (s *store) ConsumeMessage(ctx context.Context, topic string) error {
-	reader := s.readerDial(topic)
+func (s *store) ConsumeMessage(ctx context.Context) error {
+	reader := s.readerDial()
 
 	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Csontext cancelled, stopping consumption...")
-			err := reader.Close()
-			if err != nil {
-				return err
-			}
-
-			fmt.Println("Reader closed successfully!")
-			return nil
-
-		default:
-			m, err := reader.ReadMessage(ctx)
-			if err != nil {
-				return err
-			}
-
-			log.Println(string(m.Value))
+		m, err := reader.ReadMessage(ctx)
+		if err != nil {
+			fmt.Println(err)
+			break
 		}
+		fmt.Println(string(m.Value))
 	}
+	return reader.Close()
 }
