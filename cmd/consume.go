@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"kcli/internal/common"
 	"kcli/internal/infras/kafka"
 	"kcli/internal/usecases"
 	"os"
@@ -19,6 +20,24 @@ type consumeOptions struct {
 	Password         string
 	GroupId          string
 	Partition        int
+	PrintOpt         int
+}
+
+func (opts *consumeOptions) prettyPrint() {
+	fmt.Println("Consumer will run with the following options:")
+	fmt.Printf("Bootstrap Servers: %v\n", opts.BootstrapServers)
+	fmt.Printf("Topic: %s\n", opts.Topic)
+	if opts.Username != "" && opts.Password != "" {
+		fmt.Printf("Username: %s\n", opts.Username)
+		fmt.Printf("Password: %s\n", common.MaskPasswordStdOut(opts.Password))
+	}
+	if opts.Partition != -1 {
+		fmt.Printf("Partition: %d\n", opts.Partition)
+	} else {
+		fmt.Printf("Group ID: %s\n", opts.GroupId)
+	}
+
+	fmt.Printf("Print Option: %d\n", opts.PrintOpt)
 }
 
 var (
@@ -70,6 +89,12 @@ func init() {
 		-1,
 		"Partition to consume messages from")
 
+	consumeCmd.PersistentFlags().IntVar(
+		&consumeOpts.PrintOpt,
+		"print-opt",
+		2,
+		"Print option for consumed messages, 0: compact JSON, 1: beauty JSON, default: bullet list")
+
 	consumeCmd.MarkPersistentFlagRequired("bootstrap-servers")
 	consumeCmd.MarkPersistentFlagRequired("topic")
 	consumeCmd.MarkFlagsRequiredTogether("username", "password")
@@ -110,11 +135,16 @@ func consumeCmdHandler(cmd *cobra.Command, args []string) {
 		cancel()
 	}()
 
+	// Print options
+	consumeOpts.prettyPrint()
+
 	// Consume messages
 	svc := usecases.NewConsumeUsercase(store)
-	err := svc.Execute(ctx)
+	err := svc.Execute(ctx, consumeOpts.PrintOpt)
 	if err != nil {
 		fmt.Println("Error while consuming messages: ", err)
 		return
 	}
+
+	fmt.Println("consumer closed successfully")
 }

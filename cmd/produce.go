@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"kcli/internal/common"
 	"kcli/internal/infras/kafka"
 	"kcli/internal/usecases"
 	"time"
@@ -19,6 +20,29 @@ type produceOptions struct {
 	Payload          string
 	File             string
 	Timeout          int
+}
+
+func (opts *produceOptions) prettyPrint() {
+	fmt.Println("Consumer will run with the following options:")
+	fmt.Printf("Bootstrap Servers: %v\n", opts.BootstrapServers)
+	fmt.Printf("Topic: %s\n", opts.Topic)
+	if opts.Username != "" && opts.Password != "" {
+		fmt.Printf("Username: %s\n", opts.Username)
+		fmt.Printf("Password: %s\n", common.MaskPasswordStdOut(opts.Password))
+	}
+	if opts.Key != "" {
+		fmt.Printf("Key: %s\n", opts.Key)
+	}
+
+	if opts.Payload != "" {
+		fmt.Printf("Payload: %s\n", opts.Payload)
+	}
+
+	if opts.File != "" {
+		fmt.Printf("Payload: %s\n", opts.File)
+	}
+
+	fmt.Printf("Timeout: %d\n", opts.Timeout)
 }
 
 var (
@@ -109,6 +133,9 @@ func produceCmdHandler(cmd *cobra.Command, args []string) {
 	// Context for graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(produceOpts.Timeout)*time.Second)
 	defer cancel()
+
+	// Pretty print options
+	produceOpts.prettyPrint()
 
 	// Produce message
 	svc := usecases.NewProduceUsecase(store)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"kcli/internal/common"
 	"os"
 )
@@ -42,6 +43,8 @@ func (p *produce) Execute(ctx context.Context, key string, payload []byte, withF
 	if len(key) == 0 {
 		key = common.GenerateUUID()
 	}
+
+	fmt.Println("Producing message with key:", key)
 
 	err := p.produceRepo.ProduceMessage(ctx, key, payload)
 	if err != nil {

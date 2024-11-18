@@ -3,9 +3,10 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"kcli/internal/usecases/model"
 )
 
-func (s *store) ConsumeMessage(ctx context.Context) error {
+func (s *store) ConsumeMessage(ctx context.Context, msgChan chan<- model.Message) error {
 	reader := s.readerDial()
 
 	for {
@@ -14,7 +15,21 @@ func (s *store) ConsumeMessage(ctx context.Context) error {
 			fmt.Println(err)
 			break
 		}
-		fmt.Println(string(m.Value))
+
+		msg := model.NewMessage(
+			string(m.Key),
+			string(m.Value),
+			m.Partition,
+			m.Offset,
+		)
+		msgChan <- *msg
+
 	}
-	return reader.Close()
+	err := reader.Close()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("consumer successfully!")
+	return nil
 }
