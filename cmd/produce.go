@@ -87,27 +87,27 @@ func init() {
 		"key",
 		"k",
 		"",
-		"Message key, if this option empty, the key will be generated automatically")
+		"Message key, if this option empty, the key will be generated automatically in uuid format")
 
 	produceCmd.PersistentFlags().StringVarP(
 		&produceOpts.Payload,
 		"payload",
 		"p",
 		"",
-		"Message payload")
+		"Message payload, this command will read the payload content and compact it if content in json format")
 
 	produceCmd.PersistentFlags().StringVarP(
 		&produceOpts.File,
 		"file",
 		"f",
 		"",
-		"Read message payload from file")
+		"Read message payload from file, this command will read the file content and compact it if content in json format")
 
 	produceCmd.PersistentFlags().IntVar(
 		&produceOpts.Timeout,
 		"with-timeout",
 		5,
-		"Timeout for producing message in second, default 5s")
+		"Timeout for producing message in second")
 
 	produceCmd.MarkPersistentFlagRequired("bootstrap-servers")
 	produceCmd.MarkPersistentFlagRequired("topic")
