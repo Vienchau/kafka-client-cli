@@ -118,6 +118,7 @@ func init() {
 		"header",
 		[]string{},
 		"Headers to include in the message, format: key:value")
+
 	produceCmd.MarkPersistentFlagRequired("bootstrap-servers")
 	produceCmd.MarkPersistentFlagRequired("topic")
 	produceCmd.MarkFlagsRequiredTogether("username", "password")
@@ -138,6 +139,16 @@ func parseHeaders(headers []string) map[string]string {
 
 func produceCmdHandler(cmd *cobra.Command, args []string) {
 	// Validate input
+	if len(produceOpts.BootstrapServers) == 0 {
+		fmt.Println("Please provide bootstrap servers")
+		return
+	}
+
+	if produceOpts.Topic == "" {
+		fmt.Println("Please provide topic")
+		return
+	}
+
 	bootstrapServers := produceOpts.BootstrapServers
 
 	var opts []kafka.StoreOption
