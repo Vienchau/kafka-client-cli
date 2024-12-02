@@ -103,12 +103,12 @@ func init() {
 
 func consumeCmdHandler(cmd *cobra.Command, args []string) {
 	// Validate input
-	if len(produceOpts.BootstrapServers) == 0 {
+	if len(consumeOpts.BootstrapServers) == 0 {
 		fmt.Println("Please provide bootstrap servers")
 		return
 	}
 
-	if produceOpts.Topic == "" {
+	if consumeOpts.Topic == "" {
 		fmt.Println("Please provide topic")
 		return
 	}
