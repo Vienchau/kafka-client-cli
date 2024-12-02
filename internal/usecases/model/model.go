@@ -11,17 +11,23 @@ const (
 )
 
 type Message struct {
-	Key       string `json:"key"`
-	Value     string `json:"value"`
-	Partition int    `json:"partition"`
-	Offset    int64  `json:"offset"`
-	Length    int32  `json:"length"`
+	Key       string            `json:"key"`
+	Value     string            `json:"value"`
+	Headers   map[string]string `json:"headers"`
+	Partition int               `json:"partition"`
+	Offset    int64             `json:"offset"`
+	Length    int32             `json:"length"`
 }
 
-func NewMessage(key, value string, partition int, offset int64) *Message {
+func NewMessage(key,
+	value string,
+	headers map[string]string,
+	partition int,
+	offset int64) *Message {
 	return &Message{
 		Key:       key,
 		Value:     value,
+		Headers:   headers,
 		Partition: partition,
 		Offset:    offset,
 		Length:    int32(len(value)),
@@ -42,9 +48,12 @@ func (m *Message) toBulletListPrint() {
 	fmt.Println("New message coming:")
 	fmt.Printf("  - Key: %s\n", m.Key)
 	fmt.Printf("  	- Value: %s\n", m.Value)
+	fmt.Printf("  	- Headers: %v\n", m.Headers)
 	fmt.Printf("  	- Partition: %d\n", m.Partition)
 	fmt.Printf("  	- Offset: %d\n", m.Offset)
 	fmt.Printf("  	- Length: %d\n", m.Length)
+	fmt.Println("=============================")
+	fmt.Printf("\n")
 }
 
 func (m *Message) Print(printOpt int) {

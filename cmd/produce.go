@@ -6,6 +6,7 @@ import (
 	"kcli/internal/common"
 	"kcli/internal/infras/kafka"
 	"kcli/internal/usecases"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -18,6 +19,7 @@ type produceOptions struct {
 	Password         string
 	Key              string
 	Payload          string
+	Headers          []string
 	File             string
 	Timeout          int
 }
@@ -41,7 +43,9 @@ func (opts *produceOptions) prettyPrint() {
 	if opts.File != "" {
 		fmt.Printf("Payload: %s\n", opts.File)
 	}
-
+	if len(opts.Headers) > 0 {
+		fmt.Printf("Headers: %v\n", opts.Headers)
+	}
 	fmt.Printf("Timeout: %d\n", opts.Timeout)
 }
 
@@ -109,11 +113,27 @@ func init() {
 		5,
 		"Timeout for producing message in second")
 
+	produceCmd.PersistentFlags().StringSliceVar(
+		&produceOpts.Headers,
+		"header",
+		[]string{},
+		"Headers to include in the message, format: key:value")
 	produceCmd.MarkPersistentFlagRequired("bootstrap-servers")
 	produceCmd.MarkPersistentFlagRequired("topic")
 	produceCmd.MarkFlagsRequiredTogether("username", "password")
 	produceCmd.MarkFlagsMutuallyExclusive("file", "payload")
 	produceCmd.MarkFlagsOneRequired("file", "payload")
+}
+
+func parseHeaders(headers []string) map[string]string {
+	headerMap := make(map[string]string)
+	for _, header := range headers {
+		parts := strings.SplitN(header, ":", 2)
+		if len(parts) == 2 {
+			headerMap[parts[0]] = parts[1]
+		}
+	}
+	return headerMap
 }
 
 func produceCmdHandler(cmd *cobra.Command, args []string) {
@@ -136,6 +156,7 @@ func produceCmdHandler(cmd *cobra.Command, args []string) {
 
 	// Pretty print options
 	produceOpts.prettyPrint()
+	headers := parseHeaders(produceOpts.Headers)
 
 	// Produce message
 	svc := usecases.NewProduceUsecase(store)
@@ -143,7 +164,8 @@ func produceCmdHandler(cmd *cobra.Command, args []string) {
 		ctx,
 		produceOpts.Key,
 		[]byte(produceOpts.Payload),
-		produceOpts.File)
+		produceOpts.File,
+		headers)
 
 	if err != nil {
 		fmt.Println("Error while producing message: ", err)
