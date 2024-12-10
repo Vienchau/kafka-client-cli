@@ -98,7 +98,7 @@ func init() {
 	consumeCmd.MarkPersistentFlagRequired("bootstrap-servers")
 	consumeCmd.MarkPersistentFlagRequired("topic")
 	consumeCmd.MarkFlagsRequiredTogether("username", "password")
-	consumeCmd.MarkFlagsRequiredTogether("group-id", "partition")
+	consumeCmd.MarkFlagsMutuallyExclusive("group-id", "partition")
 }
 
 func consumeCmdHandler(cmd *cobra.Command, args []string) {

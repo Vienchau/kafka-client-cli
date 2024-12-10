@@ -64,7 +64,7 @@ func NewKafkaStore(
 func (s *store) writerDial() *kafka.Writer {
 	kafkaWriter := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:      s.bootstrapServers,
-		Balancer:     &kafka.LeastBytes{},
+		Balancer:     &kafka.RoundRobin{},
 		BatchSize:    100,
 		BatchTimeout: 50,
 		Async:        false,
